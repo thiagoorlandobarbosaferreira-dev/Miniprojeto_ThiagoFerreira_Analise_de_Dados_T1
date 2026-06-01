@@ -2,76 +2,180 @@ import csv
 import pandas as pd
 from datetime import datetime
 
-# ==============================================================================
-# SPRINT 1: IMPORTAÇÃO DOS DADOS
-# ==============================================================================
+# ==========================================================
+# SPRINT 1 - IMPORTAÇÃO DOS DADOS
+# ==========================================================
+
 arquivo_csv = "Varejo.csv"
 dados_limpos = []
 
-print("--- Iniciando o processamento dos dados via csv.DictReader ---")
+print("=== INICIANDO PROCESSAMENTO DOS DADOS ===")
 
-# ==============================================================================
-# SPRINT 2 & 3: TRATAMENTO, LIMPEZA DE NULOS E DATAS
-# ==============================================================================
 try:
-    with open(arquivo_csv, mode='r', encoding='utf-8') as file:
-        leitor = csv.DictReader(file)
-        
+    with open(arquivo_csv, mode="r", encoding="utf-8") as arquivo:
+        leitor = csv.DictReader(arquivo)
+
         for linha in leitor:
-            # Lógica para preencher categorias vazias
-            if not linha.get('CATEGORIA') or linha['CATEGORIA'].strip() == "":
-                linha['CATEGORIA'] = "Sem Categoria"
-                
-            # Tratamento de nulos para número de filhos
-            if not linha.get('NUMERO_FILHOS') or linha['NUMERO_FILHOS'].strip() == "":
-                linha['NUMERO_FILHOS'] = "0"
-                
-            # Conversão de string de data utilizando o módulo datetime
-            try:
-                data_str = linha['DATA'].strip()
-                linha['DATA_DATETIME'] = datetime.strptime(data_str, '%Y-%m-%d') 
-            except (ValueError, KeyError):
-                linha['DATA_DATETIME'] = None
-                
+
+            # ==================================================
+            # SPRINT 2 E 3 - LIMPEZA DOS DADOS
+            # ==================================================
+
+            # Categoria vazia
+            if "CATEGORIA" in linha:
+                if linha["CATEGORIA"] is None or linha["CATEGORIA"].strip() == "":
+                    linha["CATEGORIA"] = "Sem Categoria"
+
+            # Número de filhos vazio
+            if "NUMERO_FILHOS" in linha:
+                if linha["NUMERO_FILHOS"] is None or linha["NUMERO_FILHOS"].strip() == "":
+                    linha["NUMERO_FILHOS"] = "0"
+
+            # Conversão de data
+            if "DADOS" in linha:
+                try:
+                    linha["DATA_DATA_HORA"] = datetime.strptime(
+                        linha["DADOS"],
+                        "%Y-%m-%d"
+                    )
+                except:
+                    linha["DATA_DATA_HORA"] = None
+
             dados_limpos.append(linha)
+
 except FileNotFoundError:
-    print(f"Aviso: O arquivo '{arquivo_csv}' precisa estar na mesma pasta para execução local.")
+    print("Arquivo Varejo.csv não encontrado.")
+    exit()
 
-# Convertendo para DataFrame Pandas para as Sprints 4 e 5
-if dados_limpos:
-    df = pd.DataFrame(dados_limpos)
-    df['NUMERO_FILHOS'] = pd.to_numeric(df['NUMERO_FILHOS'], errors='coerce').fillna(0).astype(int)
-    df = df.drop_duplicates()
-else:
-    # DataFrame fictício estruturado caso o arquivo não seja carregado no ambiente de nuvem
-    df = pd.DataFrame({'NUMERO_FILHOS': [0, 1, 2, 1, 3, 0, 2], 'CATEGORIA': ['Eletro', 'Moda', 'Eletro', 'Alimentos', 'Moda', 'Alimentos', 'Eletro']})
+# ==========================================================
+# CONVERSÃO PARA DATAFRAME
+# ==========================================================
 
-# ==============================================================================
-# SPRINT 4: ESTATÍSTICA DESCRITIVA
-# ==============================================================================
-print("\n--- ESTATÍSTICA DESCRITIVA: NÚMERO DE FILHOS DOS CLIENTES ---")
-filhos = df['NUMERO_FILHOS']
-estatisticas = {
-    "Média": filhos.mean(),
-    "Mediana": filhos.median(),
-    "Desvio Padrão": filhos.std(),
-    "Moda": filhos.mode().iloc[0] if not filhos.mode().empty else "N/A",
-    "Máximo": filhos.max(),
-    "Mínimo": filhos.min(),
-    "Contagem": filhos.count(),
-    "Q1 (25%)": filhos.quantile(0.25),
-    "Q2 (50%)": filhos.quantile(0.50),
-    "Q3 (75%)": filhos.quantile(0.75)
-}
-for k, v in statistics.items():
-    print(f"{k}: {v}")
+df = pd.DataFrame(dados_limpos)
 
-# ==============================================================================
-# SPRINT 5: PADRÕES DE AGRUPAMENTO
-# ==============================================================================
-print("\n--- AGRUPAMENTO 1: Total de Compras por Categoria ---")
-print(df.groupby('CATEGORIA').size().reset_index(name='Total_Compras'))
+# ==========================================================
+# INFORMAÇÕES DA BASE
+# ==========================================================
 
-print("\n--- AGRUPAMENTO 2: Compras por Perfil de Filhos ---")
-print(df.groupby('NUMERO_FILHOS').size().reset_index(name='Total_Transacoes'))
+print("\n=== INFORMAÇÕES DA BASE ===")
+
+print("Quantidade de registros:", df.shape[0])
+print("Quantidade de colunas:", df.shape[1])
+
+print("\nColunas:")
+print(df.columns.tolist())
+
+print("\nTipos de dados:")
+print(df.dtypes)
+
+# ==========================================================
+# NULOS
+# ==========================================================
+
+print("\n=== VALORES NULOS POR COLUNA ===")
+print(df.isnull().sum())
+
+# ==========================================================
+# DUPLICATAS
+# ==========================================================
+
+print("\n=== DUPLICATAS ===")
+print(df.duplicated().sum())
+
+# ==========================================================
+# AJUSTE DE TIPOS
+# ==========================================================
+
+if "NUMERO_FILHOS" in df.columns:
+    df["NUMERO_FILHOS"] = pd.to_numeric(
+        df["NUMERO_FILHOS"],
+        errors="coerce"
+    ).fillna(0)
+
+if "DATA_DATA_HORA" in df.columns:
+    df["DATA_DATA_HORA"] = pd.to_datetime(
+        df["DATA_DATA_HORA"],
+        errors="coerce"
+    )
+
+# ==========================================================
+# REMOÇÃO DE DUPLICATAS
+# ==========================================================
+
+df = df.drop_duplicates()
+
+# ==========================================================
+# SPRINT 4 - ESTATÍSTICA DESCRITIVA
+# ==========================================================
+
+if "NUMERO_FILHOS" in df.columns:
+
+    filhos = df["NUMERO_FILHOS"]
+
+    print("\n=== ESTATÍSTICA DESCRITIVA ===")
+
+    print("Média:", filhos.mean())
+    print("Mediana:", filhos.median())
+
+    if not filhos.mode().empty:
+        print("Moda:", filhos.mode()[0])
+
+    print("Desvio Padrão:", filhos.std())
+    print("Máximo:", filhos.max())
+    print("Mínimo:", filhos.min())
+    print("Contagem:", filhos.count())
+
+    print("\nQuartis:")
+    print(filhos.describe())
+
+# ==========================================================
+# SPRINT 5 - AGRUPAMENTOS
+# ==========================================================
+
+print("\n=== AGRUPAMENTO 1 ===")
+
+if "CATEGORIA" in df.columns:
+    agrupamento_categoria = (
+        df.groupby("CATEGORIA")
+        .size()
+        .reset_index(name="TOTAL_COMPRAS")
+    )
+
+    print(agrupamento_categoria)
+
+print("\n=== AGRUPAMENTO 2 ===")
+
+if "NUMERO_FILHOS" in df.columns:
+    agrupamento_filhos = (
+        df.groupby("NUMERO_FILHOS")
+        .size()
+        .reset_index(name="TOTAL_TRANSACOES")
+    )
+
+    print(agrupamento_filhos)
+
+# ==========================================================
+# EXPORTAÇÃO
+# ==========================================================
+
+df.to_csv(
+    "df_limpo.csv",
+    index=False,
+    encoding="utf-8"
+)
+
+print("\nArquivo df_limpo.csv gerado com sucesso!")
+
+# ==========================================================
+# CONCLUSÕES
+# ==========================================================
+
+print("\n=== INSIGHTS DA ANÁLISE ===")
+
+print("1. Foram identificados e tratados valores nulos.")
+print("2. Categorias vazias foram preenchidas com 'Sem Categoria'.")
+print("3. Registros duplicados foram removidos.")
+print("4. Foi realizada conversão e validação de datas.")
+print("5. Foram geradas estatísticas da coluna NUMERO_FILHOS.")
+print("6. Foram analisados padrões através de agrupamentos.")
 
