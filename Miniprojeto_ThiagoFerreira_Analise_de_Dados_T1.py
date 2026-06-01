@@ -52,7 +52,8 @@ except FileNotFoundError:
 # ==========================================================
 
 df = pd.DataFrame(dados_limpos)
-
+print("\n=== PRIMEIRAS 5 LINHAS DA BASE ===")
+print(df.head())
 # ==========================================================
 # INFORMAÇÕES DA BASE
 # ==========================================================
